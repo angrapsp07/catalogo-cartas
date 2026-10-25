@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogo de cartas</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0f6f8f">
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#14213d;--muted:#5b6b82;--line:#d5dde8;--accent:#0f6f8f;--accent-ink:#fff;--danger:#b3261e;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1724;--card:#17223a;--ink:#e8edf6;--muted:#9fb0c8;--line:#2b3a57;--accent:#4cc3e6;--accent-ink:#06202b;--danger:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Avenir Next","Segoe UI",system-ui,sans-serif}
+main{max-width:30rem;margin:0 auto;padding:2rem 1rem}
+h1{font-size:1.6rem;margin:0 0 .25rem;letter-spacing:-.01em}
+p.sub{margin:0 0 1.5rem;color:var(--muted)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1.25rem}
+label{display:block;font-weight:600;margin:.75rem 0 .25rem}
+input{width:100%;padding:.7rem .8rem;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font:inherit}
+button{font:inherit;padding:.65rem 1rem;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.link{border:0;padding:.3rem .4rem;color:var(--accent)}
+button.danger{color:var(--danger)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+.msg{margin-top:.75rem;min-height:1.5rem;color:var(--danger)}
+.msg.ok{color:var(--accent)}
+ul{list-style:none;margin:1rem 0;padding:0}
+li{display:flex;align-items:center;gap:.25rem;padding:.5rem .6rem;border:1px solid var(--line);border-radius:10px;margin-bottom:.5rem}
+li.active{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent)}
+li .name{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+select{width:100%;padding:.7rem .8rem;border:1px solid var(--line);border-radius:8px;background:var(--card);color:inherit;font:inherit}
+.filters{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem}
+.filters input[type=search]{flex:1;min-width:8rem}
+.filters label.chk{display:flex;align-items:center;gap:.4rem;margin:0;font-weight:400}
+.filters input[type=checkbox]{width:auto}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:.75rem 0 .25rem}
+.bar i{display:block;height:100%;background:var(--accent)}
+#cards li{padding:.35rem .6rem}
+#cards li.have .nm{font-weight:600}
+#cards li:not(.have) .nm{color:var(--muted)}
+.num{width:2.6rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.nm{flex:1;min-width:0}
+.rar{display:block;font-size:.8rem;color:var(--muted)}
+.qty{width:1.8rem;text-align:center;font-variant-numeric:tabular-nums}
+.qb{width:2.4rem;height:2.4rem;padding:0;font-size:1.2rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <!-- Entrada -->
+  <section id="auth" hidden>
+    <h1>Catálogo de cartas</h1>
+    <p class="sub">Entre para ver a sua coleção em qualquer aparelho.</p>
+    <div class="panel">
+      <label for="email">E-mail</label>
+      <input id="email" type="email" autocomplete="email">
+      <label for="pass">Senha</label>
+      <input id="pass" type="password" autocomplete="current-password" minlength="6">
+      <div class="row">
+        <button class="primary" id="btnLogin">Entrar</button>
+        <button id="btnSignup">Criar conta</button>
+        <button class="link" id="btnReset">Esqueci a senha</button>
+      </div>
+      <div class="msg" id="authMsg" role="status"></div>
+    </div>
+  </section>
+
+  <!-- Contas do jogo -->
+  <section id="app" hidden>
+    <div class="top">
+      <div>
+        <h1>Minhas contas do jogo</h1>
+        <p class="sub" id="who"></p>
+      </div>
+      <button id="btnLogout">Sair</button>
+    </div>
+    <div class="panel">
+      <label for="newName">Nova conta do jogo</label>
+      <input id="newName" maxlength="40" placeholder="Ex.: Conta principal">
+      <div class="row"><button class="primary" id="btnAdd">Adicionar conta</button></div>
+      <ul id="list"></ul>
+      <div class="msg" id="appMsg" role="status"></div>
+      <p class="sub" id="current"></p>
+    </div>
+    <div class="panel" id="cardsPanel" hidden style="margin-top:1rem">
+      <label for="setSel">Set</label>
+      <select id="setSel"></select>
+      <div class="filters">
+        <input id="q" type="search" placeholder="Buscar carta" aria-label="Buscar carta">
+        <select id="view" aria-label="Mostrar" style="width:auto"><option value="all">Todas</option><option value="missing">Faltam</option><option value="wish">Desejadas</option><option value="dupes">Repetidas</option></select>
+      </div>
+      <div class="bar"><i id="barFill" style="width:0"></i></div>
+      <p class="sub" id="progress" style="margin:0"></p>
+      <ul id="cards"></ul>
+      <div class="msg" id="cardsMsg" role="status"></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// Dados do projeto catalogo-cartas no Supabase. A chave anon é pública por natureza; as regras do banco protegem os dados.
+const SUPABASE_URL = "https://hcztxdysrduhrqihtuhw.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjenR4ZHlzcmR1aHJxaWh0dWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5NjM0MTYsImV4cCI6MjEwODUzOTQxNn0.5Bn-bDXGCSR6t3kaWTodoTP6Q8KwZQEqH_fhDgewY6E";
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+let user = null, accounts = [], activeId = null;
+
+function say(el, text, ok){ el.textContent = text || ""; el.classList.toggle("ok", !!ok); }
+
+async function route(){
+  const { data } = await db.auth.getSession();
+  user = data.session ? data.session.user : null;
+  $("auth").hidden = !!user;
+  $("app").hidden = !user;
+  if (user){ $("who").textContent = user.email; await loadAccounts(); }
+}
+
+$("btnLogin").onclick = async () => {
+  const { error } = await db.auth.signInWithPassword({ email: $("email").value.trim(), password: $("pass").value });
+  if (error) say($("authMsg"), "Não foi possível entrar: " + error.message); else route();
+};
+$("btnSignup").onclick = async () => {
+  const { data, error } = await db.auth.signUp({ email: $("email").value.trim(), password: $("pass").value });
+  if (error) return say($("authMsg"), "Não foi possível criar a conta: " + error.message);
+  if (data.session) route(); else say($("authMsg"), "Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.", true);
+};
+$("btnReset").onclick = async () => {
+  const email = $("email").value.trim();
+  if (!email) return say($("authMsg"), "Digite seu e-mail para receber o link de nova senha.");
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: location.href.split("#")[0] });
+  say($("authMsg"), error ? "Não foi possível enviar: " + error.message : "Enviamos o link de nova senha para o seu e-mail.", !error);
+};
+$("btnLogout").onclick = async () => { await db.auth.signOut(); activeId = null; route(); };
+
+async function loadAccounts(){
+  const { data, error } = await db.from("game_accounts").select("id,name").order("created_at");
+  if (error) return say($("appMsg"), "Erro ao carregar as contas: " + error.message);
+  accounts = data;
+  activeId = localStorage.getItem("activeAccount");
+  if (!accounts.some(a => a.id === activeId)) activeId = accounts.length ? accounts[0].id : null;
+  render();
+}
+
+function render(){
+  const ul = $("list"); ul.innerHTML = "";
+  if (!accounts.length) ul.innerHTML = '<li>Você ainda não tem contas do jogo. Adicione a primeira acima.</li>';
+  accounts.forEach(a => {
+    const li = document.createElement("li");
+    if (a.id === activeId) li.className = "active";
+    const name = document.createElement("span"); name.className = "name"; name.textContent = a.name;
+    const use = btn("Usar", () => { activeId = a.id; localStorage.setItem("activeAccount", a.id); render(); });
+    const ren = btn("Renomear", () => rename(a));
+    const del = btn("Excluir", () => remove(a)); del.classList.add("danger");
+    [use, ren, del].forEach(b => b.classList.add("link"));
+    li.append(name, use, ren, del); ul.append(li);
+  });
+  const a = accounts.find(x => x.id === activeId);
+  $("current").textContent = a ? "Conta ativa: " + a.name : "";
+  showCards();
+}
+function btn(t, fn){ const b = document.createElement("button"); b.textContent = t; b.onclick = fn; return b; }
+
+$("btnAdd").onclick = async () => {
+  const name = $("newName").value.trim();
+  if (!name) return say($("appMsg"), "Digite um nome para a conta do jogo.");
+  const { error } = await db.from("game_accounts").insert({ name });
+  if (error) return say($("appMsg"), "Não foi possível adicionar: " + error.message);
+  $("newName").value = ""; say($("appMsg"), ""); loadAccounts();
+};
+async function rename(a){
+  const name = (prompt("Novo nome da conta do jogo:", a.name) || "").trim();
+  if (!name || name === a.name) return;
+  const { error } = await db.from("game_accounts").update({ name }).eq("id", a.id);
+  if (error) say($("appMsg"), "Não foi possível renomear: " + error.message); else loadAccounts();
+}
+async function remove(a){
+  if (!confirm("Excluir “" + a.name + "” e toda a coleção dela? Isso não pode ser desfeito.")) return;
+  const { error } = await db.from("game_accounts").delete().eq("id", a.id);
+  if (error) say($("appMsg"), "Não foi possível excluir: " + error.message); else loadAccounts();
+}
+
+// ---- Cartas (dados abertos da comunidade, versão fixa) ----
+const DATA = "https://cdn.jsdelivr.net/npm/pokemon-tcg-pocket-database@2.10.0/dist/";
+const RAR = { C:"Comum", U:"Incomum", R:"Rara", RR:"Dupla rara", SR:"Super rara", AR:"Arte rara", SAR:"Arte especial", IM:"Imersiva", UR:"Coroa" };
+let allCards = null, owned = {}, wished = {}, loadedKey = null;
+
+async function showCards(){
+  $("cardsPanel").hidden = !activeId;
+  if (!activeId) return;
+  try {
+    if (!allCards){
+      const [c, s] = await Promise.all([
+        fetch(DATA + "cards.no-image.min.json").then(r => r.json()),
+        fetch(DATA + "sets.json").then(r => r.json())
+      ]);
+      allCards = c;
+      const sets = Object.values(s).flat().sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
+      $("setSel").innerHTML = "";
+      sets.forEach(x => { const o = document.createElement("option"); o.value = x.code; o.textContent = x.code + " · " + (x.name.pt || x.name.en); $("setSel").append(o); });
+    }
+    loadOwned();
+  } catch (e) { say($("cardsMsg"), "Não foi possível carregar a lista de cartas. Verifique a conexão e recarregue a página."); }
+}
+async function loadOwned(force){
+  const set = $("setSel").value, key = activeId + "|" + set;
+  if (!force && key === loadedKey) return renderCards();
+  const [a, w] = await Promise.all([
+    db.from("collection").select("card_id,quantity").eq("account_id", activeId).like("card_id", set + "-%"),
+    db.from("wishlist").select("card_id").eq("account_id", activeId).like("card_id", set + "-%")
+  ]);
+  if (a.error || w.error) return say($("cardsMsg"), "Erro ao carregar a coleção: " + (a.error || w.error).message);
+  owned = {}; a.data.forEach(r => owned[r.card_id] = r.quantity);
+  wished = {}; w.data.forEach(r => wished[r.card_id] = true);
+  loadedKey = key; say($("cardsMsg"), ""); renderCards();
+}
+function renderCards(){
+  const set = $("setSel").value, term = $("q").value.trim().toLowerCase(), view = $("view").value;
+  const cards = allCards.filter(c => c.set === set).sort((a, b) => a.number - b.number);
+  const have = cards.filter(c => owned[set + "-" + c.number] > 0).length;
+  $("progress").textContent = have + " de " + cards.length + " cartas";
+  $("barFill").style.width = (cards.length ? have / cards.length * 100 : 0) + "%";
+  const ul = $("cards"); ul.innerHTML = "";
+  cards.filter(c => {
+    const id = set + "-" + c.number;
+    return (!term || c.name.toLowerCase().includes(term)) &&
+      (view === "all" || (view === "missing" && !owned[id]) || (view === "wish" && wished[id]) || (view === "dupes" && owned[id] > 1));
+  }).forEach(c => {
+    const id = set + "-" + c.number, q = owned[id] || 0;
+    const li = document.createElement("li"); if (q > 0) li.className = "have";
+    li.innerHTML = '<span class="num"></span><span class="nm"><span></span><small class="rar"></small></span>';
+    li.children[0].textContent = "#" + c.number; li.children[1].children[0].textContent = c.name; li.children[1].children[1].textContent = RAR[c.rarity] || c.rarity;
+    const minus = btn("−", () => setQty(c, id, -1)); minus.className = "qb"; minus.setAttribute("aria-label", "Remover uma cópia de " + c.name); minus.disabled = q === 0;
+    const n = document.createElement("span"); n.className = "qty"; n.textContent = q;
+    const plus = btn("+", () => setQty(c, id, 1)); plus.className = "qb"; plus.setAttribute("aria-label", "Adicionar uma cópia de " + c.name);
+    const star = btn(wished[id] ? "★" : "☆", () => toggleWish(id)); star.className = "qb";
+    star.setAttribute("aria-label", (wished[id] ? "Remover dos desejos: " : "Adicionar aos desejos: ") + c.name); star.setAttribute("aria-pressed", wished[id] ? "true" : "false");
+    li.append(star, minus, n, plus); ul.append(li);
+  });
+  if (!ul.children.length) ul.innerHTML = "<li>Nenhuma carta encontrada com esses filtros.</li>";
+}
+async function setQty(c, id, d){
+  const q = Math.max(0, (owned[id] || 0) + d);
+  owned[id] = q; renderCards();
+  const r = q === 0
+    ? await db.from("collection").delete().eq("account_id", activeId).eq("card_id", id)
+    : await db.from("collection").upsert({ account_id: activeId, card_id: id, quantity: q });
+  if (r.error){ say($("cardsMsg"), "Não foi possível salvar: " + r.error.message); loadOwned(true); }
+}
+async function toggleWish(id){
+  const on = !wished[id]; wished[id] = on; renderCards();
+  const r = on ? await db.from("wishlist").upsert({ account_id: activeId, card_id: id })
+               : await db.from("wishlist").delete().eq("account_id", activeId).eq("card_id", id);
+  if (r.error){ say($("cardsMsg"), "Não foi possível salvar: " + r.error.message); loadOwned(true); }
+}
+$("setSel").onchange = () => loadOwned();
+$("q").oninput = () => allCards && renderCards();
+$("view").onchange = () => allCards && renderCards();
+
+db.auth.onAuthStateChange(() => route());
+route();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
